@@ -62,10 +62,19 @@ app.post("/participants", async (req, res) => {
 
         await db.collection("messages").insertOne(message)
 
+        res.sendStatus(201)
     } catch (err) {
         res.status(500).send(err.message)
     }
-    res.sendStatus(201)
+})
+
+app.get("/participants", async (req, res) => {
+    try {
+        const participants = await db.collection("participants").find().toArray()
+        res.send(participants)
+    } catch (err) {
+        res.status(500).send(err.message)
+    }
 })
 
 // Ligar a aplicação do servidor para ouvir requisições
