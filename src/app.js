@@ -27,7 +27,7 @@ const schemaMessage = Joi.object({
     from: Joi.string().required(),
     to: Joi.string().required(),
     text: Joi.string().required(),
-    type: Joi.string().required()
+    type: Joi.string().required().valid("message", "private_message")
 })
 
 
@@ -77,6 +77,32 @@ app.get("/participants", async (req, res) => {
     }
 })
 
+app.post("/messages", async (req, res) => {
+    const { user } = req.headers
+
+    const validation = schemaMessage.validate({ ...req.body, from: user }, { abortEarly: false })
+    if (validation.error) {
+        return res.status(422).send(validation.error.details.map(detail => detail.message))
+    }
+
+    try {
+        const participantExists = await db.collection("participants").findOne({ name: user })
+        if (!participantExists) {
+            return res.sendStatus(422)
+        }
+
+        const message = {
+            ...req.body,
+            from: user,
+            time: dayjs().format('HH:mm:ss')
+        }
+
+        await db.collection("messages").insertOne(message)
+        res.sendStatus(201)
+    } catch (err) {
+        res.status(500).send(err.message)
+    }
+})
 // Ligar a aplicação do servidor para ouvir requisições
 const PORT = 5000
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`))
