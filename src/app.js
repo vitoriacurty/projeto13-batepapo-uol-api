@@ -104,7 +104,7 @@ app.post("/messages", async (req, res) => {
   }
 })
 
-app.get("messages", async (req, res) => {
+app.get("/messages", async (req, res) => {
   const { user } = req.headers
   let { limit } = req.query
   if (limit) {
@@ -127,7 +127,7 @@ app.get("messages", async (req, res) => {
 })
 
 //endpoint status
-app.post("status", async (req, res) => {
+app.post("/status", async (req, res) => {
   const { user } = req.headers
 
   if (!user) {
@@ -147,6 +147,31 @@ app.post("status", async (req, res) => {
     res.status(500).send(err.message)
   }
 })
+
+// deletar participantes inativos
+setInterval(async () => {
+  const tenSeconds = Date.now() - 10000
+
+  try {
+    const notActive = await db.collection("participants").find({ lastStatus: { $lt: tenSeconds } }).toArray()
+
+    if (notActive.lenght > 0) {
+      const messages = notActive.map(notActive => {
+        return {
+          from: notActive.name,
+          to: "Todos",
+          text: "sai da sala...",
+          type: "status",
+          time: dayjs().format("HH:mm:ss")
+        }
+      })
+      await db.collection("messages").insertMany(messages)
+      await db.collection("participants").deleteMany({ lastStatus: { $lt: tenSeconds } })
+    }
+  } catch (err) {
+    res.status(500).send(err.message)
+  }
+}, 15000)
 // Ligar a aplicação do servidor para ouvir requisições
 const PORT = 5000
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`))
