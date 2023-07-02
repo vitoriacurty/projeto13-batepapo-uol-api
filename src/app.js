@@ -152,7 +152,7 @@ setInterval(async () => {
   try {
     const notActive = await db.collection("participants").find({ lastStatus: { $lt: tenSeconds } }).toArray()
 
-    if (notActive.lenght > 0) {
+    if (notActive.length > 0) {
       const messages = notActive.map(notActive => {
         return {
           from: notActive.name,
@@ -166,7 +166,7 @@ setInterval(async () => {
       await db.collection("participants").deleteMany({ lastStatus: { $lt: tenSeconds } })
     }
   } catch (err) {
-    res.status(500).send(err.message)
+    console.log(err.message)
   }
 }, 15000)
 // Ligar a aplicação do servidor para ouvir requisições
