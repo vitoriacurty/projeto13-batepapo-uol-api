@@ -31,14 +31,14 @@ const schemaMessage = Joi.object({
 })
 
 
-// primeiro post não concluído (endpoints)
+//endpoints
 app.post("/participants", async (req, res) => {
   const { name } = req.body
 
-  const validation = schemaParticipants.validate(req.body)
+  const validation = schemaParticipants.validate(req.body, { abortEarly: false })
 
-  if (validation) {
-    return res.sendStatus(422)
+  if (validation.error) {
+    return res.status(422).send(validation.error.details.map(detail => detail.message))
   }
 
   try {
@@ -47,17 +47,14 @@ app.post("/participants", async (req, res) => {
       return res.sendStatus(409)
     }
 
-
-    const timestamp = Date.now()
-    await db.collection("participants").insertOne({ name, lastStatus: timestamp })
-
+    await db.collection("participants").insertOne({ name, lastStatus: Date.now() })
 
     const message = {
       from: name,
       to: 'Todos',
       text: 'entra na sala...',
       type: 'status',
-      time: dayjs(timestamp).format('HH:mm:ss')
+      time: dayjs().format('HH:mm:ss')
     }
 
     await db.collection("messages").insertOne(message)
