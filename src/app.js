@@ -118,9 +118,31 @@ app.get("messages", async (req, res) => {
       { $or: [{ from: user }, { to: "Todos" }, { to: user }, { type: "message" }] }
     ).toArray()
 
-    if(!limit) return res.send(messages.reverse())
+    if (!limit) return res.send(messages.reverse())
     res.send(messages.slice(-limit).reverse())
 
+  } catch (err) {
+    res.status(500).send(err.message)
+  }
+})
+
+//endpoint status
+app.post("status", async (req, res) => {
+  const { user } = req.headers
+
+  if (!user) {
+    return res.sendStatus(404)
+  }
+  try {
+    const participant = await db.collection("participants").findOne({ name: user })
+    if (!participant) {
+      return res.sendStatus(404)
+    }
+    db.collection("participants").updateOne(
+      { name: user },
+      { $set: { lastStatus: Date.now() } }
+    )
+    res.sendStatus(200)
   } catch (err) {
     res.status(500).send(err.message)
   }
